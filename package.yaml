@@ -1,0 +1,72 @@
+name:                BaseStation
+version:             0.1.0.0
+github:              "JackTheEngineer/BaseStation"
+license:             BSD3
+author:              "Jakov Kholodkov"
+maintainer:          "kjakov88@gmail.com"
+copyright:           "Jakov Kholodkov"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/JackTheEngineer/BaseStation#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- gi-gtk
+- haskell-gi-base
+- gi-cairo
+- gi-gdkpixbuf
+- gi-gdk
+- gi-glib
+- transformers
+- cairo
+- old-time
+- Chart
+- Chart-cairo
+- data-default-class
+- colour
+- lens
+- binary
+- data-binary-ieee754
+- binary-strict
+- serialport
+- random
+- bytestring
+- text
+- stm
+- time
+
+
+library:
+  source-dirs: src
+
+executables:
+  BaseStation-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - BaseStation
+
+tests:
+  BaseStation-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - BaseStation
