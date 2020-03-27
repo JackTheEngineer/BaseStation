@@ -27,6 +27,7 @@ dependencies:
 - gi-gdkpixbuf
 - gi-gdk
 - gi-glib
+# - gtk3
 - transformers
 - cairo
 - old-time
@@ -36,6 +37,7 @@ dependencies:
 - colour
 - lens
 - binary
+- binary-parsers
 - data-binary-ieee754
 - binary-strict
 - serialport
