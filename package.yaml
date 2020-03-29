@@ -27,7 +27,9 @@ dependencies:
 - gi-gdkpixbuf
 - gi-gdk
 - gi-glib
-# - gtk3
+- pango
+- plot
+- rio
 - transformers
 - cairo
 - old-time
@@ -61,6 +63,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - BaseStation
+
 
 tests:
   BaseStation-test:

@@ -40,14 +40,17 @@ packages:
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 #
 extra-deps:
-- cairo-0.13.6.1
+# - cairo-0.13.6.1
 - gtk2hs-buildtools-0.13.5.4
-- Chart-cairo-1.9.1
+# - Chart-cairo-1.9.1
 - serialport-0.4.7
-# - gtk3-0.15.4@sha256:e8de08763cb757c4be202a4eb7551a108b49cd59aa90bc7e2d680893d5fccec1,19491
-# - gio-0.13.8.0@sha256:5691212b07dc4193ea6f8202a625c9515d750b249aeafc659139e29a5ec61436,3116
-# - glib-0.13.8.0@sha256:97698bd054bad38756f3ef0220d7684f72e42660d261e9b118aa73419ce9207d,3136
-# - pango-0.13.8.0@sha256:690149ea2efb03c783937b69a5ec6ac854806146fd760e28e800634a6c2243c1,3897
+- /home/jakov/programming/haskell/colour-2.3.5
+- /home/jakov/programming/haskell/haskell-chart/chart
+- /home/jakov/programming/haskell/haskell-chart/chart-cairo
+- /home/jakov/programming/haskell/cairo-0.13.8.0
+- pango-0.13.8.0@sha256:690149ea2efb03c783937b69a5ec6ac854806146fd760e28e800634a6c2243c1,3897
+- plot-0.2.3.10@sha256:3625b87437435d338c24fc31241bbae13997db993a142b0fc8388ecfa392e50f,4363
+- glib-0.13.8.0@sha256:97698bd054bad38756f3ef0220d7684f72e42660d261e9b118aa73419ce9207d,3136
 - git: https://github.com/idontgetoutmuch/binary-low-level.git
   commit: 085211fa1ff8242947d84c44ec98a026e566c212
 

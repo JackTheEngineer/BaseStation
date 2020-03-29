@@ -4,7 +4,6 @@
   
 module Main where
 
-import Control.Monad.Trans.Reader (runReaderT)
 import GI.Cairo 
 import Graphics.Rendering.Cairo as Cairo
 import Graphics.Rendering.Cairo.Internal (Render(runRender))
@@ -14,8 +13,7 @@ import Foreign.Ptr (castPtr)
 import Control.Monad
 import Control.Concurrent as CC
 import Control.Concurrent.STM
-
-import Data.IORef
+import Control.Monad.Trans.Reader
 
 import qualified Data.Text as T 
 import Data.Maybe
@@ -34,16 +32,17 @@ import Data.Time as Time
 import Data.Time.Clock
 
 import System.IO
-import Graphics.Rendering.Chart
+
 import Data.Colour
 import Data.Colour.Names
 import Data.Default.Class
+import Graphics.Rendering.Chart
 import Graphics.Rendering.Chart.Backend.Cairo
 import Control.Lens
 import System.Hardware.Serialport
 import qualified Data.ByteString as B 
 import qualified Data.ByteString.Lazy as BL 
-import qualified Data.ByteString.Builder as Q
+import Data.IORef
 
 import UartInterface
 import PID_Optimization
@@ -51,7 +50,7 @@ import PID_Optimization
 
 type Channel = IORef [(Float, Float)]
 newChannel = newIORef [] :: IO (Channel)
-modifyChannel = modifyIORef'
+modifyChannel = atomicModifyIORef'
 readChannel = readIORef
 
 
@@ -59,9 +58,8 @@ readChannel = readIORef
 -- package. It takes a `GI.Cairo.Context` (as it appears in gi-cairo),
 -- and a `Render` action (as in the cairo lib), and renders the
 -- `Render` action into the given context.
-renderWithContext :: GI.Cairo.Context -> Render (a) -> IO (a)
-renderWithContext ct r = let !rendered = (runRender r) in 
-  withManagedPtr ct $ \p -> runReaderT rendered (Cairo (castPtr p))
+renderWithContext :: GI.Cairo.Context -> ReaderT Cairo IO a -> IO (a)
+renderWithContext ct rendered = withManagedPtr ct $ \p -> runReaderT rendered (Cairo (castPtr p))
 
 getObject b name cast = builderGetObject b name >>= unsafeCastTo cast . fromJust
 
@@ -69,36 +67,46 @@ mapTuple f (a, b) = (f a, f b)
 
 quaternionWellFormed q = ((q0 q) > 0.0) && ((q0 q) <= 1.0)
 
-rs :: UTCTime -> IORef Q.Builder -> SerialPort -> Channel -> IO()
-rs startTime buffer serport uartPlot = do
-  freshIncomeBytes <- recv serport 4096
-  atomicModifyIORef' buffer (\existingBytes -> (existingBytes <> (Q.byteString freshIncomeBytes), ()))
-  contents <- readIORef buffer
-  let concattedBS = Q.toLazyByteString contents
-  case (parseDroneMessage concattedBS) of
-    Right (bs_rest, _, result) -> do
-      --      print $ mconcat ["RestLength: ",  show (B.length bs_rest)]
-      atomicWriteIORef buffer (Q.byteString bs_rest)
+rs :: UTCTime -> Uart -> [Channel] -> IO ()
+rs startTime serport uartPlots = do
+  quats <- getAndDecodeMessage decodeQuaternions serport -- message between newlines
+  case quats of
+    Just qs -> do
       now <- Time.getCurrentTime
       let difftime = realToFrac $ diffUTCTime now startTime
-          angles = map ((\x -> x!!2) . quatAsListToEuler) result
-          accs = zip (replicate (length angles) difftime) angles
-      atomicModifyIORef' uartPlot (\b -> (concat [accs, b]  , ()))
-      
-    Left (bs_rest, position, errstring) -> do
-      print $ mconcat [errstring,
-                       " at Position: ",
-                       show position]
-      let chopped = (((BL.drop 1) . (BL.dropWhile (/= 10))) concattedBS)
-      atomicWriteIORef buffer (Q.lazyByteString chopped)
+          angles = map (quatAsListToEuler) qs
+          -- accs = zip (replicate (length angles) difftime) angles
+          z = zip (replicate (length angles) difftime) (map (flip (!!) 2) angles)
+          y = zip (replicate (length angles) difftime) (map (flip (!!) 1) angles)
+          x = zip (replicate (length angles) difftime) (map (flip (!!) 0) angles)
+          
+      (flip modifyChannel ) (\b -> (concat [z, b], ())) (uartPlots !! 0)
+      (flip modifyChannel ) (\b -> (concat [y, b], ())) (uartPlots !! 1)
+      (flip modifyChannel ) (\b -> (concat [x, b], ())) (uartPlots !! 2)
+          
+    Nothing -> return ()
+  CC.threadDelay 8000
 
+activateRender :: (Int, Int) -> (Channel, DrawingArea) -> IO ()
+activateRender (width, height) (channel, cairoArea) = do
+  widgetSetSizeRequest cairoArea (fromIntegral width) (fromIntegral height)
+  
+  on cairoArea #draw $ \context -> do
+    values <- readChannel channel
+    let chartRendered = render (chart values) (fromIntegral width, fromIntegral height)
+        asRender = runBackend (defaultEnv bitmapAlignmentFns) chartRendered
+        !rendered = (runRender asRender)
+        -- As far as i understand, "!rendered" 
+    renderWithContext context rendered
+    return True
+  return ()
 
 main :: IO ()
 main = do
   Gtk.init Nothing
   builder <- builderNewFromFile "baseStation.glade"
   mainWindow <- getObject builder "mainWindow" Window
-  canvas <- getObject builder "cairoArea" DrawingArea
+  toplevelBox <- getObject builder "toplevelBox" Box
   pEntry <- getObject builder "pEntry" Entry
   dEntry <- getObject builder "dEntry" Entry
   iEntry <- getObject builder "iEntry" Entry
@@ -106,20 +114,17 @@ main = do
   sendBtn <- getObject builder "sendBtn" Button
   clearErrBtn <- getObject builder "clearErrBtn" Button
 
+  let num = 3
+  channels <- replicateM num newChannel
+  cairoareas <- replicateM num (new DrawingArea [])
+  let chansAndCairos = zip channels cairoareas
+  mapM_ (#add toplevelBox) cairoareas
+
   
-
-  let sz = (600, 400)
-      szd = mapTuple fromIntegral sz
-
+  let size = (600, 200)
+  mapM_ (activateRender size) chansAndCairos
+  
   startTime <- Time.getCurrentTime
-  timekeeper <- newIORef startTime
-  uartResultValues <- newIORef [] :: IO (IORef [(Float, Float)])
-
-  on canvas #draw $ \context -> do
-    values <- readIORef uartResultValues
-    let rendered = runBackend (defaultEnv bitmapAlignmentFns) (render (chart values) szd)
-    renderWithContext context rendered
-    return True
 
   serport <- openUart "/dev/ttyACM0"
   
@@ -142,12 +147,10 @@ main = do
     return False
 
   on sendBtn #clicked $ sendParams
-
-  buffer <- newIORef (Q.byteString B.empty) :: IO (IORef Q.Builder)
+  _ <- forkIO $ Control.Monad.forever $ rs startTime serport channels
   
-  timeoutAdd 0 8 $ ( do
-                        rs startTime buffer serport uartResultValues
-                        widgetQueueDraw canvas
+  timeoutAdd 0 200 $ (do
+                        mapM_ widgetQueueDraw cairoareas
                         return True
                     )
   #showAll mainWindow

@@ -11,13 +11,15 @@ import Control.Monad
 import Control.Concurrent
 
 import Data.Word
-import Data.ByteString as B
+import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import Data.ByteString.Builder.Extra
 import Data.ByteString.Lazy.Internal as BLI
-import Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Lazy as BL
 import Data.Binary.IEEE754
 import Data.Binary.Parser
+
+import Data.IORef
 
 import PID_Optimization
 
@@ -54,13 +56,20 @@ fifoStatus = FifoStatus <$>
 data ObserveTx = ObserveTx { packetLostCNT :: Word8
                            , autoRetransmissionCNT :: Word8} deriving Show
 
+data Uart = Uart {
+    serial :: SerialPort
+    , buffer :: IORef BB.Builder
+  }
+  
+
 observeTx = ObserveTx <$> BG.getAsWord8 4 <*> BG.getAsWord8 4
 
-openUart :: FilePath -> IO(SerialPort)
+openUart :: FilePath -> IO(Uart)
 openUart filepath = do
   serport <- openSerial filepath defaultSerialSettings {commSpeed = CS115200
                                                        , timeout = 3000}
-  return serport
+  buf <- newIORef (BB.byteString B.empty) :: IO (IORef BB.Builder)
+  return $ Uart serport buf
 
 bangSerPort serport pGain dGain iGain = do
   let builder =  mconcat [ BB.word8  1
@@ -69,21 +78,34 @@ bangSerPort serport pGain dGain iGain = do
                          , BB.floatLE iGain  -- Ki
                          , BB.word8 $ 10 ]
       bs = BL.toStrict $ toLazyByteStringWith (safeStrategy 64 128) BL.empty builder
-  numOfSentBytes <- send serport bs
+  numOfSentBytes <- send (serial serport) bs
   print $ mconcat ["Bytes Sent: " , show numOfSentBytes]
   
-closeUart = closeSerial 
+closeUart uart = do
+  closeSerial $ serial uart
 
-getAndDecodeQuaternion :: SerialPort -> IO (Maybe Quaternion)
-getAndDecodeQuaternion serport = do
-  bytes <- recv serport 4096
-  print $ B.length bytes
-  if (B.length bytes) == 32 then do
-    return $ Just $ toQuat (G.runGet parseQuat $ fromStrict bytes)
-  else do
-    return (Nothing)
+getAndDecodeMessage :: Get (a) -> Uart -> IO (Maybe a)
+getAndDecodeMessage getter uart = do
+  freshIncomeBytes <- recv (serial uart) 4096
+  -- print $ B.length freshIncomeBytes
+  atomicModifyIORef' (buffer uart) (\existingBytes -> (existingBytes <> (BB.byteString freshIncomeBytes), ()))
+  concattedBS <- BB.toLazyByteString <$> readIORef (buffer uart)
+  case (parseDetailLazy getter concattedBS) of
+    Right (bs_rest, _, result) -> do
+      -- print $ mconcat ["RestLength: ",  show (B.length bs_rest)]
+      atomicWriteIORef (buffer uart) (BB.byteString bs_rest)
+      return $ Just result
+    Left (bs_rest, position, errstring) -> do
+      print $ mconcat [errstring,
+                       "-- at Position: ",
+                       show position]
+      let chopped = (((BL.drop 1) . (BL.dropWhile (/= 10))) concattedBS)
+      atomicWriteIORef (buffer uart) (BB.lazyByteString chopped)
+      -- delete up to the next newline and then write the rest into the IORef
+      return Nothing
 
-parseDroneMessage bs = parseDetailLazy (some' getDroneMessage) bs
+
+decodeQuaternions = (some' getDroneMessage) :: Get ([[Float]])
 
 getDroneMessage = do
   qs <- parseQuat
