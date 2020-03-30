@@ -27,14 +27,14 @@ dependencies:
 - gi-gdkpixbuf
 - gi-gdk
 - gi-glib
-- pango
+- gi-pango
+#- pango
 - plot
 - rio
 - transformers
 - cairo
 - old-time
-- Chart
-- Chart-cairo
+- vector
 - data-default-class
 - colour
 - lens

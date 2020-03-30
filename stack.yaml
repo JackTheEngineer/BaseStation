@@ -40,13 +40,8 @@ packages:
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 #
 extra-deps:
-# - cairo-0.13.6.1
 - gtk2hs-buildtools-0.13.5.4
-# - Chart-cairo-1.9.1
 - serialport-0.4.7
-- /home/jakov/programming/haskell/colour-2.3.5
-- /home/jakov/programming/haskell/haskell-chart/chart
-- /home/jakov/programming/haskell/haskell-chart/chart-cairo
 - /home/jakov/programming/haskell/cairo-0.13.8.0
 - pango-0.13.8.0@sha256:690149ea2efb03c783937b69a5ec6ac854806146fd760e28e800634a6c2243c1,3897
 - plot-0.2.3.10@sha256:3625b87437435d338c24fc31241bbae13997db993a142b0fc8388ecfa392e50f,4363

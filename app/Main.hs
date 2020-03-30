@@ -8,6 +8,10 @@ import GI.Cairo
 import Graphics.Rendering.Cairo as Cairo
 import Graphics.Rendering.Cairo.Internal (Render(runRender))
 import Graphics.Rendering.Cairo.Types (Cairo(Cairo))
+import qualified Graphics.Rendering.Cairo as C
+--import qualified Graphics.Rendering.Pango as P
+import qualified GI.Pango as P
+import Graphics.Rendering.Plot as Plot
 import Foreign.Ptr (castPtr)
 
 import Control.Monad
@@ -36,20 +40,20 @@ import System.IO
 import Data.Colour
 import Data.Colour.Names
 import Data.Default.Class
-import Graphics.Rendering.Chart
-import Graphics.Rendering.Chart.Backend.Cairo
 import Control.Lens
 import System.Hardware.Serialport
-import qualified Data.ByteString as B 
-import qualified Data.ByteString.Lazy as BL 
+
 import Data.IORef
 
 import UartInterface
 import PID_Optimization
 
+import qualified RIO.Vector.Storable as VS
+import qualified RIO.ByteString as B
+import qualified RIO.ByteString.Lazy as BL
 
-type Channel = IORef [(Float, Float)]
-newChannel = newIORef [] :: IO (Channel)
+type Channel = IORef (VS.Vector Double, VS.Vector Double)
+newChannel = newIORef (VS.empty, VS.empty) :: IO (Channel)
 modifyChannel = atomicModifyIORef'
 readChannel = readIORef
 
@@ -58,8 +62,9 @@ readChannel = readIORef
 -- package. It takes a `GI.Cairo.Context` (as it appears in gi-cairo),
 -- and a `Render` action (as in the cairo lib), and renders the
 -- `Render` action into the given context.
-renderWithContext :: GI.Cairo.Context -> ReaderT Cairo IO a -> IO (a)
-renderWithContext ct rendered = withManagedPtr ct $ \p -> runReaderT rendered (Cairo (castPtr p))
+renderWithContext :: GI.Cairo.Context -> Render () -> IO ()
+renderWithContext ct r = withManagedPtr ct $ \p ->
+                         runReaderT (runRender r) (Cairo (castPtr p))
 
 getObject b name cast = builderGetObject b name >>= unsafeCastTo cast . fromJust
 
@@ -67,23 +72,30 @@ mapTuple f (a, b) = (f a, f b)
 
 quaternionWellFormed q = ((q0 q) > 0.0) && ((q0 q) <= 1.0)
 
+f2d :: Float -> Double
+f2d = realToFrac
+
 rs :: UTCTime -> Uart -> [Channel] -> IO ()
-rs startTime serport uartPlots = do
-  quats <- getAndDecodeMessage decodeQuaternions serport -- message between newlines
+rs startTime serport plotDataChannels = do
+  quats <- getAndDecodeMessage decodeQuaternions serport
   case quats of
     Just qs -> do
       now <- Time.getCurrentTime
       let difftime = realToFrac $ diffUTCTime now startTime
           angles = map (quatAsListToEuler) qs
           -- accs = zip (replicate (length angles) difftime) angles
-          z = zip (replicate (length angles) difftime) (map (flip (!!) 2) angles)
-          y = zip (replicate (length angles) difftime) (map (flip (!!) 1) angles)
-          x = zip (replicate (length angles) difftime) (map (flip (!!) 0) angles)
-          
-      (flip modifyChannel ) (\b -> (concat [z, b], ())) (uartPlots !! 0)
-      (flip modifyChannel ) (\b -> (concat [y, b], ())) (uartPlots !! 1)
-      (flip modifyChannel ) (\b -> (concat [x, b], ())) (uartPlots !! 2)
-          
+          l = (length angles)
+          zData = VS.fromList $ map (f2d . (flip (!!) 2)) angles
+          yData = VS.fromList $ map (f2d . (flip (!!) 1)) angles
+          xData = VS.fromList $ map (f2d . (flip (!!) 0)) angles
+          newtimes = VS.replicate l (f2d difftime)
+          -- updater
+          u = (\f d -> (((VS.++) newtimes (fst d), (VS.++) f (snd d)), ())) 
+
+      modifyChannel (plotDataChannels !! 0) (u zData)
+      modifyChannel (plotDataChannels !! 1) (u yData)
+      modifyChannel (plotDataChannels !! 2) (u xData)
+
     Nothing -> return ()
   CC.threadDelay 8000
 
@@ -93,10 +105,7 @@ activateRender (width, height) (channel, cairoArea) = do
   
   on cairoArea #draw $ \context -> do
     values <- readChannel channel
-    let chartRendered = render (chart values) (fromIntegral width, fromIntegral height)
-        asRender = runBackend (defaultEnv bitmapAlignmentFns) chartRendered
-        !rendered = (runRender asRender)
-        -- As far as i understand, "!rendered" 
+    let !rendered = Plot.render ((uncurry figure) values) (width, height) 
     renderWithContext context rendered
     return True
   return ()
@@ -106,7 +115,7 @@ main = do
   Gtk.init Nothing
   builder <- builderNewFromFile "baseStation.glade"
   mainWindow <- getObject builder "mainWindow" Window
-  toplevelBox <- getObject builder "toplevelBox" Box
+  toplevelBox <- getObject builder "toplevelBox" GI.Gtk.Box
   pEntry <- getObject builder "pEntry" Entry
   dEntry <- getObject builder "dEntry" Entry
   iEntry <- getObject builder "iEntry" Entry
@@ -120,12 +129,10 @@ main = do
   let chansAndCairos = zip channels cairoareas
   mapM_ (#add toplevelBox) cairoareas
 
-  
   let size = (600, 200)
   mapM_ (activateRender size) chansAndCairos
   
   startTime <- Time.getCurrentTime
-
   serport <- openUart "/dev/ttyACM0"
   
   let sendParams = do
@@ -156,21 +163,26 @@ main = do
   #showAll mainWindow
   Gtk.main
 
-setLinesBlue :: PlotLines a b -> PlotLines a b
-setLinesBlue = plot_lines_style . line_color .~ opaque blue
+aat = VS.generate 1000 (\x -> 2*pi/1000 * (fromIntegral x)) :: VS.Vector Double
+ax = sin aat
 
-chart :: [(Float, Float)] -> Renderable ()
-chart xyTuples = toRenderable layout
-  where
-    fontsize = 16
-    sinusoid2 = plot_points_style .~ filledCircles 1.5 (opaque blue)
-              $ plot_points_values .~ xyTuples
-              $ plot_points_title .~ "Magic"
-              $ def
+figure :: VS.Vector Double -> VS.Vector Double -> Figure ()
+figure x_s y_s = do
+        withLineDefaults $ Plot.setLineWidth 0.2
+        withTextDefaults $ setFontFamily "Cantarell"
+        withTitle $ setText "Drone"
+        withSubTitle $ do
+                       setText "MotionSensor"
+                       Plot.setFontSize 12
+        setPlots 1 1
+        withPlot (1,1) $ do
+                         setDataset (Line, x_s, [y_s])
+                         addAxis XAxis (Side Lower) $ do
+                                                      setGridlines Major True
+                                                      withAxisLabel $ setText "time (s)"
+                         addAxis YAxis (Side Lower) $ do
+                                                      setGridlines Major True
+                                                      withAxisLabel $ setText "amplitude (α)"
+                         setRangeFromData XAxis Lower Linear
+                         setRangeFromData YAxis Lower Linear
 
-    layout = layout_title .~ "MagicLines"
-             $ layout_plots .~ [toPlot sinusoid2]
-             $ layout_x_axis . laxis_title .~ "Time"
-             $ layout_y_axis . laxis_title .~ "Amplitude"
-             $ layout_all_font_styles . font_size .~ fontsize
-             $ def  
