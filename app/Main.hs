@@ -52,8 +52,8 @@ import qualified RIO.Vector.Storable as VS
 import qualified RIO.ByteString as B
 import qualified RIO.ByteString.Lazy as BL
 
-type Channel = IORef (VS.Vector Double, VS.Vector Double)
-newChannel = newIORef (VS.empty, VS.empty) :: IO (Channel)
+type Channel = IORef ([Double], [Double])
+newChannel = newIORef ([], []) :: IO (Channel)
 modifyChannel = atomicModifyIORef'
 readChannel = readIORef
 
@@ -83,14 +83,13 @@ rs startTime serport plotDataChannels = do
       now <- Time.getCurrentTime
       let difftime = realToFrac $ diffUTCTime now startTime
           angles = map (quatAsListToEuler) qs
-          -- accs = zip (replicate (length angles) difftime) angles
           l = (length angles)
-          zData = VS.fromList $ map (f2d . (flip (!!) 2)) angles
-          yData = VS.fromList $ map (f2d . (flip (!!) 1)) angles
-          xData = VS.fromList $ map (f2d . (flip (!!) 0)) angles
-          newtimes = VS.replicate l (f2d difftime)
+          zData = map (f2d . (flip (!!) 2)) angles
+          yData = map (f2d . (flip (!!) 1)) angles
+          xData = map (f2d . (flip (!!) 0)) angles
+          newtimes = replicate l (f2d difftime)
           -- updater
-          u = (\f d -> (((VS.++) newtimes (fst d), (VS.++) f (snd d)), ())) 
+          u = (\f d -> (( newtimes ++ (fst d), f ++ (snd d)), ())) 
 
       modifyChannel (plotDataChannels !! 0) (u zData)
       modifyChannel (plotDataChannels !! 1) (u yData)
@@ -166,7 +165,7 @@ main = do
 aat = VS.generate 1000 (\x -> 2*pi/1000 * (fromIntegral x)) :: VS.Vector Double
 ax = sin aat
 
-figure :: VS.Vector Double -> VS.Vector Double -> Figure ()
+figure :: [Double] -> [Double] -> Figure()
 figure x_s y_s = do
         withLineDefaults $ Plot.setLineWidth 0.2
         withTextDefaults $ setFontFamily "Cantarell"
@@ -176,7 +175,7 @@ figure x_s y_s = do
                        Plot.setFontSize 12
         setPlots 1 1
         withPlot (1,1) $ do
-                         setDataset (Line, x_s, [y_s])
+                         setDataset (Line, (VS.fromList x_s), [(VS.fromList y_s)])
                          addAxis XAxis (Side Lower) $ do
                                                       setGridlines Major True
                                                       withAxisLabel $ setText "time (s)"
