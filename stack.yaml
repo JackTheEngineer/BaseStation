@@ -42,7 +42,7 @@ packages:
 extra-deps:
 - gtk2hs-buildtools-0.13.5.4
 - serialport-0.4.7
-- /home/jakov/programming/haskell/cairo-0.13.8.0
+- cairo-0.13.8.0
 - pango-0.13.8.0@sha256:690149ea2efb03c783937b69a5ec6ac854806146fd760e28e800634a6c2243c1,3897
 - plot-0.2.3.10@sha256:3625b87437435d338c24fc31241bbae13997db993a142b0fc8388ecfa392e50f,4363
 - glib-0.13.8.0@sha256:97698bd054bad38756f3ef0220d7684f72e42660d261e9b118aa73419ce9207d,3136

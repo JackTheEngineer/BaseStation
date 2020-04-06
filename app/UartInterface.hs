@@ -96,9 +96,6 @@ getAndDecodeMessage getter uart = do
       atomicWriteIORef (buffer uart) (BB.byteString bs_rest)
       return $ Just result
     Left (bs_rest, position, errstring) -> do
-      print $ mconcat [errstring,
-                       "-- at Position: ",
-                       show position]
       let chopped = (((BL.drop 1) . (BL.dropWhile (/= 10))) concattedBS)
       atomicWriteIORef (buffer uart) (BB.lazyByteString chopped)
       -- delete up to the next newline and then write the rest into the IORef
