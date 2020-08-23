@@ -1,0 +1,16 @@
+index-state: 2020-08-23T00:00:00Z
+
+with-compiler: ghc-8.8.4
+
+packages:
+    ./
+
+source-repository-package
+    type: git
+    location: https://github.com/idontgetoutmuch/binary-low-level.git
+    tag: e1b10f863c65c312b14c8500a386a87a1578b918
+
+source-repository-package
+    type: git
+    location: https://github.com/hasufell/plot.git
+    tag: cd3489b89cd16c72478a733ddafa11f715f2e0f4
