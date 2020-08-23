@@ -27,8 +27,6 @@ dependencies:
 - gi-gdkpixbuf
 - gi-gdk
 - gi-glib
-#- gi-pango
-#- pango
 - plot
 - rio
 - transformers

@@ -15,9 +15,6 @@ import Graphics.Rendering.Cairo as Cairo
 import Graphics.Rendering.Cairo.Internal (Render(runRender))
 import Graphics.Rendering.Cairo.Types (Cairo(Cairo))
 import qualified Graphics.Rendering.Cairo as C
-
--- import qualified Graphics.Rendering.Pango as P
--- import qualified GI.Pango as P
 import Graphics.Rendering.Plot as Plot
 import Foreign.Ptr (castPtr)
 
@@ -127,8 +124,6 @@ interleaveLists :: [a] -> [a] -> [a]
 interleaveLists xs     []     = []
 interleaveLists []     ys     = []
 interleaveLists (x:xs) (y:ys) = x : y : interleaveLists xs ys
-
-
 
 saveChannelToFile :: Channel -> FilePath -> IO()
 saveChannelToFile channel file = do

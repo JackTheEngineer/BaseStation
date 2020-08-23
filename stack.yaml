@@ -17,7 +17,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: lts-14.17
+resolver: lts-16.10
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -42,13 +42,12 @@ packages:
 extra-deps:
 - gtk2hs-buildtools-0.13.5.4
 - serialport-0.4.7
-- cairo-0.13.8.0
-- pango-0.13.8.0@sha256:690149ea2efb03c783937b69a5ec6ac854806146fd760e28e800634a6c2243c1,3897
+- cairo-0.13.8.1
+- pango-0.13.8.1
 - plot-0.2.3.10@sha256:3625b87437435d338c24fc31241bbae13997db993a142b0fc8388ecfa392e50f,4363
 - glib-0.13.8.0@sha256:97698bd054bad38756f3ef0220d7684f72e42660d261e9b118aa73419ce9207d,3136
 - git: https://github.com/idontgetoutmuch/binary-low-level.git
-  commit: 085211fa1ff8242947d84c44ec98a026e566c212
-
+  commit: e1b10f863c65c312b14c8500a386a87a1578b918
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

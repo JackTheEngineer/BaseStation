@@ -19,12 +19,19 @@ packages:
   original:
     hackage: serialport-0.4.7
 - completed:
-    hackage: pango-0.13.8.0@sha256:690149ea2efb03c783937b69a5ec6ac854806146fd760e28e800634a6c2243c1,3897
+    hackage: cairo-0.13.8.1@sha256:1938aaeb5d3504678d995774dfe870f6b66cbd43d336b692fa8779b23b2b67a9,4075
+    pantry-tree:
+      size: 2830
+      sha256: 8f6344da4c578a4dd3a49c333e2158b695bfae32a74d34a76bbc6e531b70c95c
+  original:
+    hackage: cairo-0.13.8.1
+- completed:
+    hackage: pango-0.13.8.1@sha256:877b121c0bf87c96d3619effae6751ecfd74b7f7f3227cf3fde012597aed5ed9,3917
     pantry-tree:
       size: 1506
-      sha256: 328fc8a2e574379bfbc9b710270d3f6be7ed2c9bf5e10477a3256c0d2d362024
+      sha256: eec456a3d16f1a9305196a86a7c49a6f2cfe1b041a50b02059dc4898a07a3bd9
   original:
-    hackage: pango-0.13.8.0@sha256:690149ea2efb03c783937b69a5ec6ac854806146fd760e28e800634a6c2243c1,3897
+    hackage: pango-0.13.8.1
 - completed:
     hackage: plot-0.2.3.10@sha256:3625b87437435d338c24fc31241bbae13997db993a142b0fc8388ecfa392e50f,4363
     pantry-tree:
@@ -41,18 +48,18 @@ packages:
     hackage: glib-0.13.8.0@sha256:97698bd054bad38756f3ef0220d7684f72e42660d261e9b118aa73419ce9207d,3136
 - completed:
     name: binary-strict
-    version: 0.4.8.4
+    version: 0.4.8.6
     git: https://github.com/idontgetoutmuch/binary-low-level.git
     pantry-tree:
       size: 1121
-      sha256: 96464ee67a1c20ad943a8281f78543dbfc220cd6a3533ec089391f1dc729c4dd
-    commit: 085211fa1ff8242947d84c44ec98a026e566c212
+      sha256: 97064a4b80bf3c8a4c0ec193167c0f1dc118f8c300497cdd12be46fd20defd39
+    commit: e1b10f863c65c312b14c8500a386a87a1578b918
   original:
     git: https://github.com/idontgetoutmuch/binary-low-level.git
-    commit: 085211fa1ff8242947d84c44ec98a026e566c212
+    commit: e1b10f863c65c312b14c8500a386a87a1578b918
 snapshots:
 - completed:
-    size: 524799
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/14/17.yaml
-    sha256: 1d72b33c0fc048e23f4f18fd76a6ad79dd1d8a3c054644098a71a09855e40c7c
-  original: lts-14.17
+    size: 532383
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/10.yaml
+    sha256: 469d781ab6d2a4eceed6b31b6e4ec842dcd3cd1d11577972e86902603dce24df
+  original: lts-16.10
