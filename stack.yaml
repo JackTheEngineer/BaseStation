@@ -44,7 +44,8 @@ extra-deps:
 - serialport-0.4.7
 - cairo-0.13.8.1
 - pango-0.13.8.1
-- plot-0.2.3.10@sha256:3625b87437435d338c24fc31241bbae13997db993a142b0fc8388ecfa392e50f,4363
+- git: https://github.com/hasufell/plot
+  commit: cd3489b89cd16c72478a733ddafa11f715f2e0f4
 - glib-0.13.8.0@sha256:97698bd054bad38756f3ef0220d7684f72e42660d261e9b118aa73419ce9207d,3136
 - git: https://github.com/idontgetoutmuch/binary-low-level.git
   commit: e1b10f863c65c312b14c8500a386a87a1578b918
@@ -72,3 +73,14 @@ extra-deps:
 #
 # Allow a newer minor version of GHC than the snapshot specifies
 # compiler-check: newer-minor
+
+# nix:
+#   enable: true
+#   pure: true
+#   packages:
+#     - pango
+#     - gobject-introspection
+#     - webkitgtk
+#     - gtksourceview4
+#     - gtk3
+#     - pkg-config
