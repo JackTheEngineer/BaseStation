@@ -1,12 +1,11 @@
 {-# LANGUAGE OverloadedLabels #-}
-{-# LANGUAGE AutoDeriveTypeable, BangPatterns, BinaryLiterals, ConstraintKinds,
+{-# LANGUAGE BangPatterns, BinaryLiterals, ConstraintKinds,
 DataKinds,DefaultSignatures,DeriveDataTypeable,DeriveFoldable,DeriveFunctor,DeriveGeneric,
 DeriveTraversable,DoAndIfThenElse,EmptyDataDecls,ExistentialQuantification,FlexibleContexts,
 FlexibleInstances,FunctionalDependencies,GADTs,GeneralizedNewtypeDeriving,InstanceSigs,KindSignatures,
-LambdaCase,MonadFailDesugaring,MultiParamTypeClasses,MultiWayIf,NamedFieldPuns,
+LambdaCase,MultiParamTypeClasses,MultiWayIf,NamedFieldPuns,
 OverloadedStrings,PartialTypeSignatures,PatternGuards,PolyKinds,RankNTypes,RecordWildCards,
 ScopedTypeVariables,StandaloneDeriving,TupleSections,TypeFamilies,TypeSynonymInstances,ViewPatterns #-}
-
 
 module Main where
 

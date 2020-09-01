@@ -44,6 +44,10 @@ extra-deps:
 - serialport-0.4.7
 - cairo-0.13.8.1
 - pango-0.13.8.1
+- haskell-gi-0.24.4
+- haskell-gi-base-0.24.2
+- gi-pango-1.0.23
+- gi-harfbuzz-0.0.3
 - git: https://github.com/hasufell/plot
   commit: cd3489b89cd16c72478a733ddafa11f715f2e0f4
 - glib-0.13.8.0@sha256:97698bd054bad38756f3ef0220d7684f72e42660d261e9b118aa73419ce9207d,3136
